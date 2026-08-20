@@ -1,0 +1,21 @@
+{
+  "presets": {
+    "Пример": {
+      "details": "Работаю над проектом",
+      "state": "В процессе",
+      "activity_type": "PLAYING",
+      "large_image": "large_logo",
+      "large_text": "Моё приложение",
+      "small_image": "small_icon",
+      "small_text": "Онлайн",
+      "buttons": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com"
+        }
+      ],
+      "timer": "elapsed",
+      "countdown_minutes": 0
+    }
+  }
+}
