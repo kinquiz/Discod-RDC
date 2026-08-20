@@ -73,10 +73,37 @@ main.py         — entry point, starts the CLI
 config.py       — reads/writes config.json and presets.json
 rpc_client.py   — wraps pypresence: connecting, reconnecting, sending updates
 ui.py           — the CLI menu and field/preset editing logic
-config.json     — app settings (Client ID)
+i18n.py         — loads locales/*.json and provides t(key) for translated strings
+config.json     — app settings (Client ID, interface language)
 presets.json    — your saved presets
+locales/        — UI translations (en.json, ru.json)
 requirements.txt
 ```
+
+## Language / Язык
+
+The interface supports English and Russian. **English is the default** — used
+on first run and whenever `config.json` doesn't have a language saved yet.
+
+To switch language, pick **Language / Язык** from the main menu and choose a
+number. The choice is written to `config.json` (`"language": "en"` or
+`"ru"`) and takes effect immediately, without restarting — it's also what
+gets loaded automatically on every future run until you change it again.
+
+### Adding a new language
+
+1. Copy `locales/en.json` to `locales/<code>.json` (e.g. `locales/de.json`
+   for German), keeping the same key structure.
+2. Translate the values — leave the keys and any `{placeholder}` names (like
+   `{error}`, `{name}`, `{minutes}`) untouched, since the code fills those in.
+3. Run the app; your language now shows up as an option in the **Language /
+   Язык** menu automatically (it's picked up from any `.json` file in
+   `locales/`). If a key is missing from your file, the app falls back to the
+   English text instead of failing.
+
+Everything user-facing is served through `i18n.t("some.key")` (defined in
+[i18n.py](i18n.py)), so adding a language never requires touching the Python
+code — only a new file under `locales/`.
 
 ## Things Discord's RPC just won't do
 

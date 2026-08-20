@@ -15,6 +15,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from i18n import t
+
 # Каталог, в котором лежит сам скрипт — используем его как базу для путей,
 # чтобы приложение работало одинаково независимо от текущей рабочей директории.
 BASE_DIR = Path(__file__).resolve().parent
@@ -22,9 +24,11 @@ CONFIG_PATH = BASE_DIR / "config.json"
 PRESETS_PATH = BASE_DIR / "presets.json"
 
 # Значения по умолчанию, которые используются, если файл ещё не существует
-# или повреждён.
+# или повреждён. "language" не задан здесь пустой строкой намеренно: en — язык
+# по умолчанию при первом запуске (см. i18n.DEFAULT_LANGUAGE).
 DEFAULT_CONFIG: dict[str, Any] = {
-    "client_id": ""
+    "client_id": "",
+    "language": "en",
 }
 
 DEFAULT_PRESETS: dict[str, Any] = {
@@ -44,11 +48,10 @@ def _load_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
         with path.open("r", encoding="utf-8") as fh:
             data = json.load(fh)
             if not isinstance(data, dict):
-                raise ValueError("корневой элемент JSON должен быть объектом")
+                raise ValueError(t("config.json_root_invalid"))
             return data
     except (json.JSONDecodeError, ValueError, OSError) as exc:
-        print(f"[config] Не удалось прочитать {path.name}: {exc}. "
-              f"Будут использованы значения по умолчанию.")
+        print(t("config.read_failed", file=path.name, error=exc))
         return json.loads(json.dumps(default))
 
 
@@ -59,7 +62,7 @@ def _save_json(path: Path, data: dict[str, Any]) -> None:
             json.dump(data, fh, ensure_ascii=False, indent=2)
             fh.write("\n")
     except OSError as exc:
-        raise ConfigError(f"Не удалось сохранить {path.name}: {exc}")
+        raise ConfigError(t("config.save_failed", file=path.name, error=exc))
 
 
 def load_config() -> dict[str, Any]:

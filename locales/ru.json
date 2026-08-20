@@ -1,0 +1,157 @@
+{
+  "app": {
+    "title": "=== Discord Rich Presence клиент ===",
+    "config_error": "Ошибка конфигурации: {error}",
+    "interrupted": "\nПрервано пользователем.",
+    "client_id_not_set": "Client ID не задан. Настройте его в пункте меню «Настройки» или впишите вручную в config.json.",
+    "disconnected_bye": "Отключено. До встречи!"
+  },
+  "menu": {
+    "header": "\nМеню:",
+    "exit": "Выход",
+    "show_status": "Показать текущий статус",
+    "edit_details": "Изменить Details (верхняя строка)",
+    "edit_state": "Изменить State (нижняя строка)",
+    "edit_activity_type": "Изменить тип активности",
+    "edit_large_image": "Изменить большое изображение",
+    "edit_small_image": "Изменить малое изображение",
+    "edit_buttons": "Изменить кнопки",
+    "edit_timer": "Изменить таймер",
+    "save_preset": "Сохранить текущий статус как пресет",
+    "load_preset": "Загрузить пресет",
+    "delete_preset": "Удалить пресет",
+    "list_presets": "Список пресетов",
+    "settings": "Настройки (Client ID)",
+    "language": "Language / Язык",
+    "reconnect": "Переподключиться к Discord",
+    "resend_status": "Отправить статус повторно",
+    "clear_status": "Очистить статус",
+    "choose_activity_type": "\nВыберите тип активности:",
+    "choose_language": "\nВыберите язык интерфейса:",
+    "streaming_not_supported": "  (Streaming не поддерживается Discord через RPC-подключение)",
+    "timer_header": "\nТаймер:",
+    "timer_off": "  1. Выключить",
+    "timer_elapsed": "  2. Прошло времени (elapsed) — считать от момента применения",
+    "timer_countdown": "  3. Обратный отсчёт (countdown) — до конца заданного количества минут"
+  },
+  "prompt": {
+    "choice": "Выбор",
+    "type_number": "Номер типа",
+    "preset_load": "Номер или имя пресета для загрузки",
+    "preset_delete": "Номер или имя пресета для удаления",
+    "language_choice": "Номер языка"
+  },
+  "field": {
+    "details": "Details (верхняя строка статуса)",
+    "state": "State (нижняя строка статуса)",
+    "large_image": "Large image (ключ или URL)",
+    "large_text": "Подсказка при наведении (large_text)",
+    "small_image": "Small image (ключ или URL)",
+    "small_text": "Подсказка при наведении (small_text)",
+    "button_label": "  Название кнопки",
+    "button_url": "  Ссылка (https://...)",
+    "countdown_minutes": "Через сколько минут закончится",
+    "preset_name": "Имя пресета для сохранения",
+    "client_id": "Новый Client ID (application id из Discord Developer Portal)"
+  },
+  "hint": {
+    "large_image_asset": "Укажите ключ ассета из Developer Portal (Rich Presence -> Art Assets)",
+    "large_image_url": "либо прямую ссылку на изображение (https://...), если Discord её поддержит.",
+    "buttons_limit": "\nDiscord поддерживает не более двух кнопок со ссылками."
+  },
+  "label": {
+    "button_header": "-- Кнопка {n} (оставьте название пустым, чтобы пропустить) --",
+    "language_en": "English",
+    "language_ru": "Русский"
+  },
+  "status": {
+    "header": "\n--- Текущая активность --------------------------------",
+    "footer": "---------------------------------------------------------\n",
+    "type": "  Тип:            {value}",
+    "details": "  Details (верх): {value}",
+    "state": "  State (низ):    {value}",
+    "large_image": "  Большая картинка: {image}  (текст: {text})",
+    "small_image": "  Малая картинка:   {image}  (текст: {text})",
+    "button_line": "  Кнопка {n}: {label} -> {url}",
+    "no_buttons": "  Кнопки: —",
+    "timer": "  Таймер: {desc}",
+    "discord": "  Discord: {state}",
+    "active_preset": "  Активный пресет: {name}"
+  },
+  "timer_desc": {
+    "off": "выключен",
+    "elapsed": "прошло времени (от текущего момента)",
+    "countdown": "обратный отсчёт ({minutes} мин.)"
+  },
+  "activity_type": {
+    "playing": "Playing (Играет в …)",
+    "listening": "Listening (Слушает …)",
+    "watching": "Watching (Смотрит …)",
+    "competing": "Competing (Соревнуется в …)"
+  },
+  "presets": {
+    "none_saved": "Сохранённых пресетов пока нет.",
+    "saved_header": "\nСохранённые пресеты:",
+    "current_marker": " (текущий)",
+    "saved": "Пресет «{name}» сохранён в presets.json.",
+    "loaded": "Пресет «{name}» загружен.",
+    "deleted": "Пресет «{name}» удалён."
+  },
+  "settings": {
+    "current_client_id": "\nТекущий Client ID: {value}",
+    "client_id_saved": "Client ID сохранён в config.json. Подключение будет установлено при следующем действии.",
+    "language_current": "\nТекущий язык: {value}",
+    "language_saved": "Язык сохранён в config.json."
+  },
+  "confirm": {
+    "delete_preset": "Удалить пресет «{name}»? (да/нет)",
+    "yes_words": "да,д,yes,y"
+  },
+  "common": {
+    "connected": "подключено",
+    "disconnected": "нет соединения",
+    "not_saved": "(не сохранён)",
+    "not_set": "(не задан)",
+    "empty_placeholder": "—",
+    "success_prefix": "✔ {message}",
+    "error_prefix": "✘ {error}",
+    "no": "нет"
+  },
+  "error": {
+    "invalid_choice": "Некорректный выбор.",
+    "invalid_choice_unchanged": "Некорректный выбор, значение не изменено.",
+    "invalid_integer": "Нужно ввести целое число. Оставлено предыдущее значение.",
+    "button_url_invalid": "  Ссылка должна начинаться с http:// или https://, кнопка пропущена.",
+    "countdown_minutes_invalid": "Количество минут должно быть больше нуля. Таймер не изменён.",
+    "name_empty": "Имя не может быть пустым.",
+    "preset_not_found": "Пресет не найден.",
+    "unexpected": "Непредвиденная ошибка: {error}",
+    "details_too_long": "Details не может быть длиннее {max} символов (сейчас {length}). Значение не изменено.",
+    "state_too_long": "State не может быть длиннее {max} символов (сейчас {length}). Значение не изменено.",
+    "button_label_too_long": "  Название кнопки не может быть длиннее {max} символов (сейчас {length}), кнопка пропущена."
+  },
+  "config": {
+    "read_failed": "[config] Не удалось прочитать {file}: {error}. Будут использованы значения по умолчанию.",
+    "save_failed": "Не удалось сохранить {file}: {error}",
+    "json_root_invalid": "корневой элемент JSON должен быть объектом"
+  },
+  "rpc": {
+    "connected_success": "Подключение к Discord установлено.",
+    "status_cleared": "Статус очищен.",
+    "status_updated": "Статус обновлён в Discord.",
+    "error": {
+      "client_id_not_set": "Client ID не задан. Укажите его в config.json или через пункт меню «Настройки».",
+      "discord_not_found": "Discord не запущен. Запустите приложение Discord и попробуйте снова.",
+      "pipe_not_found": "Не удалось найти канал (pipe) Discord. Discord точно запущен на этом компьютере?",
+      "invalid_client_id": "Неверный Client ID. Проверьте значение application id в Discord Developer Portal и в config.json.",
+      "connection_timeout": "Превышено время ожидания подключения к Discord.",
+      "discord_error": "Discord вернул ошибку при подключении: {message} (код {code}).",
+      "connect_failed": "Не удалось подключиться к Discord: {error}",
+      "clear_failed": "Не удалось очистить статус: {error}",
+      "update_rejected": "Discord отклонил обновление статуса: {error}. Проверьте длину Details/State (не более 128 символов), названия ключей ассетов (картинок) и ссылки в кнопках.",
+      "retry_failed": "Переподключение к Discord выполнено, но повторная попытка не удалась: {error}",
+      "response_timeout": "Discord не ответил вовремя. Попробуйте повторить обновление.",
+      "pypresence_error": "Ошибка pypresence: {error}"
+    }
+  }
+}

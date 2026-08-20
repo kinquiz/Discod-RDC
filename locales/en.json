@@ -1,0 +1,157 @@
+{
+  "app": {
+    "title": "=== Discord Rich Presence Client ===",
+    "config_error": "Configuration error: {error}",
+    "interrupted": "\nInterrupted by user.",
+    "client_id_not_set": "Client ID is not set. Configure it via the “Settings” menu item or set it manually in config.json.",
+    "disconnected_bye": "Disconnected. See you!"
+  },
+  "menu": {
+    "header": "\nMenu:",
+    "exit": "Exit",
+    "show_status": "Show current status",
+    "edit_details": "Edit Details (top line)",
+    "edit_state": "Edit State (bottom line)",
+    "edit_activity_type": "Change activity type",
+    "edit_large_image": "Edit large image",
+    "edit_small_image": "Edit small image",
+    "edit_buttons": "Edit buttons",
+    "edit_timer": "Edit timer",
+    "save_preset": "Save current status as preset",
+    "load_preset": "Load preset",
+    "delete_preset": "Delete preset",
+    "list_presets": "List presets",
+    "settings": "Settings (Client ID)",
+    "language": "Language / Язык",
+    "reconnect": "Reconnect to Discord",
+    "resend_status": "Resend status",
+    "clear_status": "Clear status",
+    "choose_activity_type": "\nChoose activity type:",
+    "choose_language": "\nChoose interface language:",
+    "streaming_not_supported": "  (Streaming is not supported by Discord over RPC)",
+    "timer_header": "\nTimer:",
+    "timer_off": "  1. Turn off",
+    "timer_elapsed": "  2. Elapsed time — count from the moment it's applied",
+    "timer_countdown": "  3. Countdown — until the given number of minutes runs out"
+  },
+  "prompt": {
+    "choice": "Choice",
+    "type_number": "Type number",
+    "preset_load": "Preset number or name to load",
+    "preset_delete": "Preset number or name to delete",
+    "language_choice": "Language number"
+  },
+  "field": {
+    "details": "Details (top status line)",
+    "state": "State (bottom status line)",
+    "large_image": "Large image (key or URL)",
+    "large_text": "Hover tooltip (large_text)",
+    "small_image": "Small image (key or URL)",
+    "small_text": "Hover tooltip (small_text)",
+    "button_label": "  Button label",
+    "button_url": "  URL (https://...)",
+    "countdown_minutes": "Minutes until it ends",
+    "preset_name": "Preset name to save",
+    "client_id": "New Client ID (application id from Discord Developer Portal)"
+  },
+  "hint": {
+    "large_image_asset": "Enter the asset key from the Developer Portal (Rich Presence -> Art Assets)",
+    "large_image_url": "or a direct image URL (https://...), if Discord supports it.",
+    "buttons_limit": "\nDiscord supports at most two link buttons."
+  },
+  "label": {
+    "button_header": "-- Button {n} (leave the label empty to skip) --",
+    "language_en": "English",
+    "language_ru": "Русский"
+  },
+  "status": {
+    "header": "\n--- Current activity --------------------------------",
+    "footer": "---------------------------------------------------------\n",
+    "type": "  Type:           {value}",
+    "details": "  Details (top):  {value}",
+    "state": "  State (bottom): {value}",
+    "large_image": "  Large image: {image}  (text: {text})",
+    "small_image": "  Small image: {image}  (text: {text})",
+    "button_line": "  Button {n}: {label} -> {url}",
+    "no_buttons": "  Buttons: —",
+    "timer": "  Timer: {desc}",
+    "discord": "  Discord: {state}",
+    "active_preset": "  Active preset: {name}"
+  },
+  "timer_desc": {
+    "off": "off",
+    "elapsed": "elapsed time (from now)",
+    "countdown": "countdown ({minutes} min.)"
+  },
+  "activity_type": {
+    "playing": "Playing",
+    "listening": "Listening",
+    "watching": "Watching",
+    "competing": "Competing"
+  },
+  "presets": {
+    "none_saved": "No saved presets yet.",
+    "saved_header": "\nSaved presets:",
+    "current_marker": " (current)",
+    "saved": "Preset “{name}” saved to presets.json.",
+    "loaded": "Preset “{name}” loaded.",
+    "deleted": "Preset “{name}” deleted."
+  },
+  "settings": {
+    "current_client_id": "\nCurrent Client ID: {value}",
+    "client_id_saved": "Client ID saved to config.json. Connection will be established on the next action.",
+    "language_current": "\nCurrent language: {value}",
+    "language_saved": "Language saved to config.json."
+  },
+  "confirm": {
+    "delete_preset": "Delete preset “{name}”? (yes/no)",
+    "yes_words": "yes,y"
+  },
+  "common": {
+    "connected": "connected",
+    "disconnected": "no connection",
+    "not_saved": "(not saved)",
+    "not_set": "(not set)",
+    "empty_placeholder": "—",
+    "success_prefix": "✔ {message}",
+    "error_prefix": "✘ {error}",
+    "no": "no"
+  },
+  "error": {
+    "invalid_choice": "Invalid choice.",
+    "invalid_choice_unchanged": "Invalid choice, value not changed.",
+    "invalid_integer": "Please enter an integer. Previous value kept.",
+    "button_url_invalid": "  URL must start with http:// or https://, button skipped.",
+    "countdown_minutes_invalid": "Minutes must be greater than zero. Timer not changed.",
+    "name_empty": "Name cannot be empty.",
+    "preset_not_found": "Preset not found.",
+    "unexpected": "Unexpected error: {error}",
+    "details_too_long": "Details must be at most {max} characters (currently {length}). Value not changed.",
+    "state_too_long": "State must be at most {max} characters (currently {length}). Value not changed.",
+    "button_label_too_long": "  Button label must be at most {max} characters (currently {length}), button skipped."
+  },
+  "config": {
+    "read_failed": "[config] Failed to read {file}: {error}. Default values will be used.",
+    "save_failed": "Failed to save {file}: {error}",
+    "json_root_invalid": "the root JSON element must be an object"
+  },
+  "rpc": {
+    "connected_success": "Connected to Discord.",
+    "status_cleared": "Status cleared.",
+    "status_updated": "Status updated in Discord.",
+    "error": {
+      "client_id_not_set": "Client ID is not set. Provide it in config.json or via the “Settings” menu item.",
+      "discord_not_found": "Discord is not running. Start the Discord app and try again.",
+      "pipe_not_found": "Could not find the Discord pipe. Is Discord really running on this machine?",
+      "invalid_client_id": "Invalid Client ID. Check the application id value in the Discord Developer Portal and in config.json.",
+      "connection_timeout": "Timed out while connecting to Discord.",
+      "discord_error": "Discord returned an error while connecting: {message} (code {code}).",
+      "connect_failed": "Failed to connect to Discord: {error}",
+      "clear_failed": "Failed to clear status: {error}",
+      "update_rejected": "Discord rejected the status update: {error}. Check the length of Details/State (max 128 characters), the asset (image) key names, and button URLs.",
+      "retry_failed": "Reconnected to Discord, but the retry failed: {error}",
+      "response_timeout": "Discord did not respond in time. Try updating again.",
+      "pypresence_error": "pypresence error: {error}"
+    }
+  }
+}

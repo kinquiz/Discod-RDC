@@ -16,6 +16,7 @@ from __future__ import annotations
 import sys
 
 from config import ConfigError
+from i18n import t
 from ui import App
 
 
@@ -23,12 +24,12 @@ def main() -> None:
     try:
         app = App()
     except ConfigError as exc:
-        print(f"✘ Ошибка конфигурации: {exc}")
+        print(t("common.error_prefix", error=t("app.config_error", error=exc)))
         sys.exit(1)
     try:
         app.run()
     except KeyboardInterrupt:
-        print("\nПрервано пользователем.")
+        print(t("app.interrupted"))
         app.rpc.disconnect()
         sys.exit(0)
 

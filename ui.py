@@ -5,8 +5,11 @@
 - редактирование полей активности "на лету" (каждое изменение сразу
   отправляется в Discord, без перезапуска скрипта);
 - управление пресетами (сохранение/загрузка/удаление в presets.json);
-- настройки приложения (Client ID) в config.json;
+- настройки приложения (Client ID, язык интерфейса) в config.json;
 - ручное переподключение к Discord.
+
+Все строки интерфейса берутся из локализации через i18n.t() —
+см. locales/en.json и locales/ru.json.
 """
 
 from __future__ import annotations
@@ -15,15 +18,22 @@ import copy
 from typing import Any, Callable
 
 import config
+import i18n
+from i18n import t
 from rpc_client import RPCClient, RPCError
 
-ACTIVITY_TYPE_LABELS: dict[str, str] = {
-    "PLAYING": "Playing (Играет в …)",
-    "LISTENING": "Listening (Слушает …)",
-    "WATCHING": "Watching (Смотрит …)",
-    "COMPETING": "Competing (Соревнуется в …)",
-}
 ACTIVITY_TYPE_ORDER = ["PLAYING", "LISTENING", "WATCHING", "COMPETING"]
+
+# Ограничения Discord RPC: details/state — максимум 128 символов,
+# название кнопки — максимум 32 символа. Проверяем на своей стороне,
+# чтобы не узнавать об этом только из невнятной ошибки Discord.
+DETAILS_STATE_MAX_LENGTH = 128
+BUTTON_LABEL_MAX_LENGTH = 32
+
+
+def _activity_type_label(key: str) -> str:
+    return t(f"activity_type.{key.lower()}")
+
 
 # Пустой пресет, с которого приложение стартует при первом запуске.
 def make_empty_preset() -> dict[str, Any]:
@@ -53,7 +63,7 @@ def _input_int(prompt: str, default: int = 0) -> int:
     try:
         return int(raw)
     except ValueError:
-        print("Нужно ввести целое число. Оставлено предыдущее значение.")
+        print(t("error.invalid_integer"))
         return default
 
 
@@ -62,6 +72,7 @@ class App:
 
     def __init__(self) -> None:
         self.cfg = config.load_config()
+        i18n.set_language(self.cfg.get("language", i18n.DEFAULT_LANGUAGE))
         self.presets_data = config.load_presets()
         self.rpc = RPCClient(self.cfg.get("client_id", ""))
         self.current: dict[str, Any] = make_empty_preset()
@@ -75,111 +86,125 @@ class App:
         """Выполняет RPC-действие, печатая единообразное сообщение об успехе/ошибке."""
         try:
             action()
-            print(f"✔ {success_message}")
+            print(t("common.success_prefix", message=success_message))
         except RPCError as exc:
-            print(f"✘ {exc}")
+            print(t("common.error_prefix", error=exc))
 
     def apply(self) -> None:
         """Отправляет текущее состояние в Discord и печатает результат/ошибку."""
-        self._run_rpc(lambda: self.rpc.update(self.current), "Статус обновлён в Discord.")
+        self._run_rpc(lambda: self.rpc.update(self.current), t("rpc.status_updated"))
 
     def print_status(self) -> None:
         p = self.current
-        print("\n--- Текущая активность --------------------------------")
-        print(f"  Тип:            {ACTIVITY_TYPE_LABELS.get(p['activity_type'], p['activity_type'])}")
-        print(f"  Details (верх): {p['details'] or '—'}")
-        print(f"  State (низ):    {p['state'] or '—'}")
-        print(f"  Большая картинка: {p['large_image'] or '—'}  (текст: {p['large_text'] or '—'})")
-        print(f"  Малая картинка:   {p['small_image'] or '—'}  (текст: {p['small_text'] or '—'})")
+        empty = t("common.empty_placeholder")
+        print(t("status.header"))
+        print(t("status.type", value=_activity_type_label(p["activity_type"])))
+        print(t("status.details", value=p["details"] or empty))
+        print(t("status.state", value=p["state"] or empty))
+        print(t("status.large_image", image=p["large_image"] or empty, text=p["large_text"] or empty))
+        print(t("status.small_image", image=p["small_image"] or empty, text=p["small_text"] or empty))
         if p["buttons"]:
             for i, b in enumerate(p["buttons"], 1):
-                print(f"  Кнопка {i}: {b['label']} -> {b['url']}")
+                print(t("status.button_line", n=i, label=b.get("label", ""), url=b.get("url", "")))
         else:
-            print("  Кнопки: —")
-        timer_desc = {
-            "none": "выключен",
-            "elapsed": "прошло времени (от текущего момента)",
-            "countdown": f"обратный отсчёт ({p.get('countdown_minutes', 0)} мин.)",
-        }.get(p["timer"], p["timer"])
-        print(f"  Таймер: {timer_desc}")
-        print(f"  Discord: {'подключено' if self.rpc.connected else 'нет соединения'}")
-        print(f"  Активный пресет: {self.current_preset_name or '(не сохранён)'}")
-        print("---------------------------------------------------------\n")
+            print(t("status.no_buttons"))
+        timer_desc_map = {
+            "none": t("timer_desc.off"),
+            "elapsed": t("timer_desc.elapsed"),
+            "countdown": t("timer_desc.countdown", minutes=p.get("countdown_minutes", 0)),
+        }
+        timer_desc = timer_desc_map.get(p["timer"], p["timer"])
+        print(t("status.timer", desc=timer_desc))
+        discord_state = t("common.connected") if self.rpc.connected else t("common.disconnected")
+        print(t("status.discord", state=discord_state))
+        print(t("status.active_preset", name=self.current_preset_name or t("common.not_saved")))
+        print(t("status.footer"))
 
     # ------------------------------------------------------------------ #
     # Редактирование полей
     # ------------------------------------------------------------------ #
 
     def edit_details(self) -> None:
-        self.current["details"] = _input("Details (верхняя строка статуса)", self.current["details"])
+        new_value = _input(t("field.details"), self.current["details"])
+        if len(new_value) > DETAILS_STATE_MAX_LENGTH:
+            print(t("error.details_too_long", max=DETAILS_STATE_MAX_LENGTH, length=len(new_value)))
+            return
+        self.current["details"] = new_value
         self.apply()
 
     def edit_state(self) -> None:
-        self.current["state"] = _input("State (нижняя строка статуса)", self.current["state"])
+        new_value = _input(t("field.state"), self.current["state"])
+        if len(new_value) > DETAILS_STATE_MAX_LENGTH:
+            print(t("error.state_too_long", max=DETAILS_STATE_MAX_LENGTH, length=len(new_value)))
+            return
+        self.current["state"] = new_value
         self.apply()
 
     def edit_activity_type(self) -> None:
-        print("\nВыберите тип активности:")
+        print(t("menu.choose_activity_type"))
         for i, key in enumerate(ACTIVITY_TYPE_ORDER, 1):
-            print(f"  {i}. {ACTIVITY_TYPE_LABELS[key]}")
-        print("  (Streaming не поддерживается Discord через RPC-подключение)")
-        choice = _input("Номер типа", "")
+            print(f"  {i}. {_activity_type_label(key)}")
+        print(t("menu.streaming_not_supported"))
+        choice = _input(t("prompt.type_number"), "")
         if choice.isdigit() and 1 <= int(choice) <= len(ACTIVITY_TYPE_ORDER):
             self.current["activity_type"] = ACTIVITY_TYPE_ORDER[int(choice) - 1]
             self.apply()
         else:
-            print("Некорректный выбор, значение не изменено.")
+            print(t("error.invalid_choice_unchanged"))
 
     def edit_large_image(self) -> None:
-        print("Укажите ключ ассета из Developer Portal (Rich Presence -> Art Assets)")
-        print("либо прямую ссылку на изображение (https://...), если Discord её поддержит.")
-        self.current["large_image"] = _input("Large image (ключ или URL)", self.current["large_image"])
-        self.current["large_text"] = _input("Подсказка при наведении (large_text)", self.current["large_text"])
+        print(t("hint.large_image_asset"))
+        print(t("hint.large_image_url"))
+        self.current["large_image"] = _input(t("field.large_image"), self.current["large_image"])
+        self.current["large_text"] = _input(t("field.large_text"), self.current["large_text"])
         self.apply()
 
     def edit_small_image(self) -> None:
-        self.current["small_image"] = _input("Small image (ключ или URL)", self.current["small_image"])
-        self.current["small_text"] = _input("Подсказка при наведении (small_text)", self.current["small_text"])
+        self.current["small_image"] = _input(t("field.small_image"), self.current["small_image"])
+        self.current["small_text"] = _input(t("field.small_text"), self.current["small_text"])
         self.apply()
 
     def edit_buttons(self) -> None:
-        print("\nDiscord поддерживает не более двух кнопок со ссылками.")
+        print(t("hint.buttons_limit"))
         buttons: list[dict[str, str]] = []
         for i in (1, 2):
-            print(f"-- Кнопка {i} (оставьте название пустым, чтобы пропустить) --")
+            print(t("label.button_header", n=i))
             existing = self.current["buttons"][i - 1] if len(self.current["buttons"]) >= i else {"label": "", "url": ""}
-            label = _input("  Название кнопки", existing.get("label", ""))
+            label = _input(t("field.button_label"), existing.get("label", ""))
             if not label:
                 continue
-            url = _input("  Ссылка (https://...)", existing.get("url", ""))
+            if len(label) > BUTTON_LABEL_MAX_LENGTH:
+                print(t("error.button_label_too_long", max=BUTTON_LABEL_MAX_LENGTH, length=len(label)))
+                continue
+            url = _input(t("field.button_url"), existing.get("url", ""))
             if not url.startswith(("http://", "https://")):
-                print("  Ссылка должна начинаться с http:// или https://, кнопка пропущена.")
+                print(t("error.button_url_invalid"))
                 continue
             buttons.append({"label": label, "url": url})
         self.current["buttons"] = buttons
         self.apply()
 
     def edit_timer(self) -> None:
-        print("\nТаймер:")
-        print("  1. Выключить")
-        print("  2. Прошло времени (elapsed) — считать от момента применения")
-        print("  3. Обратный отсчёт (countdown) — до конца заданного количества минут")
-        choice = _input("Выбор", "")
+        print(t("menu.timer_header"))
+        print(t("menu.timer_off"))
+        print(t("menu.timer_elapsed"))
+        print(t("menu.timer_countdown"))
+        choice = _input(t("prompt.choice"), "")
         if choice == "1":
             self.current["timer"] = "none"
         elif choice == "2":
             self.current["timer"] = "elapsed"
         elif choice == "3":
             minutes = _input_int(
-                "Через сколько минут закончится", self.current.get("countdown_minutes", 30) or 30
+                t("field.countdown_minutes"), self.current.get("countdown_minutes", 30) or 30
             )
             if minutes <= 0:
-                print("Количество минут должно быть больше нуля. Таймер не изменён.")
+                print(t("error.countdown_minutes_invalid"))
                 return
             self.current["timer"] = "countdown"
             self.current["countdown_minutes"] = minutes
         else:
-            print("Некорректный выбор, значение не изменено.")
+            print(t("error.invalid_choice_unchanged"))
             return
         self.apply()
 
@@ -190,18 +215,18 @@ class App:
     def list_presets(self) -> list[str]:
         names = sorted(self.presets_data["presets"].keys())
         if not names:
-            print("Сохранённых пресетов пока нет.")
+            print(t("presets.none_saved"))
         else:
-            print("\nСохранённые пресеты:")
+            print(t("presets.saved_header"))
             for i, name in enumerate(names, 1):
-                marker = " (текущий)" if name == self.current_preset_name else ""
+                marker = t("presets.current_marker") if name == self.current_preset_name else ""
                 print(f"  {i}. {name}{marker}")
         return names
 
     def save_preset(self) -> None:
-        name = _input("Имя пресета для сохранения", self.current_preset_name or "")
+        name = _input(t("field.preset_name"), self.current_preset_name or "")
         if not name:
-            print("Имя не может быть пустым.")
+            print(t("error.name_empty"))
             return
         previous = self.presets_data["presets"].get(name)
         self.presets_data["presets"][name] = copy.deepcopy(self.current)
@@ -213,19 +238,19 @@ class App:
                 del self.presets_data["presets"][name]
             else:
                 self.presets_data["presets"][name] = previous
-            print(f"✘ {exc}")
+            print(t("common.error_prefix", error=exc))
             return
         self.current_preset_name = name
-        print(f"Пресет «{name}» сохранён в presets.json.")
+        print(t("presets.saved", name=name))
 
     def load_preset(self) -> None:
         names = self.list_presets()
         if not names:
             return
-        choice = _input("Номер или имя пресета для загрузки", "")
+        choice = _input(t("prompt.preset_load"), "")
         name = self._resolve_preset_name(choice, names)
         if name is None:
-            print("Пресет не найден.")
+            print(t("error.preset_not_found"))
             return
         preset = copy.deepcopy(self.presets_data["presets"][name])
         # Дозаполняем недостающие поля (на случай старого формата пресета).
@@ -233,30 +258,31 @@ class App:
         merged.update(preset)
         self.current = merged
         self.current_preset_name = name
-        print(f"Пресет «{name}» загружен.")
+        print(t("presets.loaded", name=name))
         self.apply()
 
     def delete_preset(self) -> None:
         names = self.list_presets()
         if not names:
             return
-        choice = _input("Номер или имя пресета для удаления", "")
+        choice = _input(t("prompt.preset_delete"), "")
         name = self._resolve_preset_name(choice, names)
         if name is None:
-            print("Пресет не найден.")
+            print(t("error.preset_not_found"))
             return
-        confirm = _input(f"Удалить пресет «{name}»? (да/нет)", "нет")
-        if confirm.lower() in ("да", "yes", "y", "д"):
+        confirm = _input(t("confirm.delete_preset", name=name), t("common.no"))
+        yes_words = {w.strip().lower() for w in t("confirm.yes_words").split(",") if w.strip()}
+        if confirm.strip().lower() in yes_words:
             removed = self.presets_data["presets"].pop(name)
             try:
                 config.save_presets(self.presets_data)
             except config.ConfigError as exc:
                 self.presets_data["presets"][name] = removed  # откатываем удаление
-                print(f"✘ {exc}")
+                print(t("common.error_prefix", error=exc))
                 return
             if self.current_preset_name == name:
                 self.current_preset_name = None
-            print(f"Пресет «{name}» удалён.")
+            print(t("presets.deleted", name=name))
 
     @staticmethod
     def _resolve_preset_name(choice: str, names: list[str]) -> str | None:
@@ -271,8 +297,8 @@ class App:
     # ------------------------------------------------------------------ #
 
     def edit_settings(self) -> None:
-        print(f"\nТекущий Client ID: {self.cfg.get('client_id') or '(не задан)'}")
-        new_id = _input("Новый Client ID (application id из Discord Developer Portal)", self.cfg.get("client_id", ""))
+        print(t("settings.current_client_id", value=self.cfg.get("client_id") or t("common.not_set")))
+        new_id = _input(t("field.client_id"), self.cfg.get("client_id", ""))
         if new_id != self.cfg.get("client_id"):
             previous_id = self.cfg.get("client_id", "")
             self.cfg["client_id"] = new_id
@@ -280,56 +306,80 @@ class App:
                 config.save_config(self.cfg)
             except config.ConfigError as exc:
                 self.cfg["client_id"] = previous_id
-                print(f"✘ {exc}")
+                print(t("common.error_prefix", error=exc))
                 return
             self.rpc.set_client_id(new_id)
-            print("Client ID сохранён в config.json. Подключение будет установлено при следующем действии.")
+            print(t("settings.client_id_saved"))
+
+    def edit_language(self) -> None:
+        current_label = t(f"label.language_{i18n.get_language()}")
+        print(t("settings.language_current", value=current_label))
+        print(t("menu.choose_language"))
+        languages = i18n.available_languages()
+        for i, code in enumerate(languages, 1):
+            print(f"  {i}. {t(f'label.language_{code}')}")
+        choice = _input(t("prompt.language_choice"), "")
+        if choice.isdigit() and 1 <= int(choice) <= len(languages):
+            new_language = languages[int(choice) - 1]
+            i18n.set_language(new_language)
+            self.cfg["language"] = new_language
+            try:
+                config.save_config(self.cfg)
+            except config.ConfigError as exc:
+                print(t("common.error_prefix", error=exc))
+                return
+            print(t("settings.language_saved"))
+        else:
+            print(t("error.invalid_choice_unchanged"))
 
     def reconnect(self) -> None:
         self.rpc.disconnect()
-        self._run_rpc(self.rpc.connect, "Подключение к Discord установлено.")
+        self._run_rpc(self.rpc.connect, t("rpc.connected_success"))
 
     def clear_status(self) -> None:
-        self._run_rpc(self.rpc.clear, "Статус очищен.")
+        self._run_rpc(self.rpc.clear, t("rpc.status_cleared"))
 
     # ------------------------------------------------------------------ #
     # Главное меню
     # ------------------------------------------------------------------ #
 
     def run(self) -> None:
-        print("=== Discord Rich Presence клиент ===")
+        print(t("app.title"))
         if not self.cfg.get("client_id"):
-            print("Client ID не задан. Настройте его в пункте меню «Настройки» "
-                  "или впишите вручную в config.json.")
+            print(t("app.client_id_not_set"))
         else:
             self.reconnect()
 
+        # Ключи, а не готовые переводы: язык можно сменить прямо во время работы
+        # (пункт «Language / Язык»), поэтому подписи переводятся заново на каждой
+        # итерации цикла — иначе меню осталось бы на старом языке до перезапуска.
         menu: list[tuple[str, Callable[[], None]]] = [
-            ("Показать текущий статус", self.print_status),
-            ("Изменить Details (верхняя строка)", self.edit_details),
-            ("Изменить State (нижняя строка)", self.edit_state),
-            ("Изменить тип активности", self.edit_activity_type),
-            ("Изменить большое изображение", self.edit_large_image),
-            ("Изменить малое изображение", self.edit_small_image),
-            ("Изменить кнопки", self.edit_buttons),
-            ("Изменить таймер", self.edit_timer),
-            ("Сохранить текущий статус как пресет", self.save_preset),
-            ("Загрузить пресет", self.load_preset),
-            ("Удалить пресет", self.delete_preset),
-            ("Список пресетов", self.list_presets),
-            ("Настройки (Client ID)", self.edit_settings),
-            ("Переподключиться к Discord", self.reconnect),
-            ("Отправить статус повторно", self.apply),
-            ("Очистить статус", self.clear_status),
+            ("menu.show_status", self.print_status),
+            ("menu.edit_details", self.edit_details),
+            ("menu.edit_state", self.edit_state),
+            ("menu.edit_activity_type", self.edit_activity_type),
+            ("menu.edit_large_image", self.edit_large_image),
+            ("menu.edit_small_image", self.edit_small_image),
+            ("menu.edit_buttons", self.edit_buttons),
+            ("menu.edit_timer", self.edit_timer),
+            ("menu.save_preset", self.save_preset),
+            ("menu.load_preset", self.load_preset),
+            ("menu.delete_preset", self.delete_preset),
+            ("menu.list_presets", self.list_presets),
+            ("menu.settings", self.edit_settings),
+            ("menu.language", self.edit_language),
+            ("menu.reconnect", self.reconnect),
+            ("menu.resend_status", self.apply),
+            ("menu.clear_status", self.clear_status),
         ]
 
         while True:
-            print("\nМеню:")
-            for i, (label, _) in enumerate(menu, 1):
-                print(f"  {i}. {label}")
-            print("  0. Выход")
+            print(t("menu.header"))
+            for i, (label_key, _) in enumerate(menu, 1):
+                print(f"  {i}. {t(label_key)}")
+            print(f"  0. {t('menu.exit')}")
 
-            choice = input("Выбор: ").strip()
+            choice = input(f"{t('prompt.choice')}: ").strip()
             if choice == "0":
                 break
             if choice.isdigit() and 1 <= int(choice) <= len(menu):
@@ -339,9 +389,9 @@ class App:
                 except KeyboardInterrupt:
                     raise
                 except Exception as exc:  # неожиданная ошибка — не роняем приложение
-                    print(f"✘ Непредвиденная ошибка: {exc}")
+                    print(t("common.error_prefix", error=t("error.unexpected", error=exc)))
             else:
-                print("Некорректный выбор.")
+                print(t("error.invalid_choice"))
 
         self.rpc.disconnect()
-        print("Отключено. До встречи!")
+        print(t("app.disconnected_bye"))

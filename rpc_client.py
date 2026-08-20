@@ -15,6 +15,7 @@ from typing import Any, Optional
 
 from pypresence import Presence
 from pypresence.types import ActivityType
+from i18n import t
 from pypresence.exceptions import (
     ConnectionTimeout,
     DiscordError,
@@ -41,6 +42,11 @@ ACTIVITY_TYPE_MAP: dict[str, ActivityType] = {
 _RECOVERABLE_ERRORS = (PipeClosed, InvalidPipe, BrokenPipeError, ConnectionResetError, OSError)
 
 
+def _exc_text(exc: BaseException) -> str:
+    """str(exc), а если оно пустое (как у PipeClosed() без аргументов) — имя класса исключения."""
+    return str(exc) or type(exc).__name__
+
+
 class RPCError(Exception):
     """Ошибка RPC-клиента с сообщением, понятным конечному пользователю."""
 
@@ -62,39 +68,29 @@ class RPCClient:
     def connect(self) -> None:
         """Устанавливает соединение с локальным клиентом Discord."""
         if not self.client_id:
-            raise RPCError(
-                "Client ID не задан. Укажите его в config.json "
-                "или через пункт меню «Настройки»."
-            )
+            raise RPCError(t("rpc.error.client_id_not_set"))
         try:
             self._rpc = Presence(self.client_id)
             self._rpc.connect()
             self.connected = True
         except DiscordNotFound:
             self.connected = False
-            raise RPCError(
-                "Discord не запущен. Запустите приложение Discord и попробуйте снова."
-            )
+            raise RPCError(t("rpc.error.discord_not_found"))
         except InvalidPipe:
             self.connected = False
-            raise RPCError(
-                "Не удалось найти канал (pipe) Discord. Discord точно запущен на этом компьютере?"
-            )
+            raise RPCError(t("rpc.error.pipe_not_found"))
         except InvalidID:
             self.connected = False
-            raise RPCError(
-                "Неверный Client ID. Проверьте значение application id "
-                "в Discord Developer Portal и в config.json."
-            )
+            raise RPCError(t("rpc.error.invalid_client_id"))
         except ConnectionTimeout:
             self.connected = False
-            raise RPCError("Превышено время ожидания подключения к Discord.")
+            raise RPCError(t("rpc.error.connection_timeout"))
         except DiscordError as exc:
             self.connected = False
-            raise RPCError(f"Discord вернул ошибку при подключении: {exc.message} (код {exc.code}).")
+            raise RPCError(t("rpc.error.discord_error", message=exc.message, code=exc.code))
         except PyPresenceException as exc:
             self.connected = False
-            raise RPCError(f"Не удалось подключиться к Discord: {exc}")
+            raise RPCError(t("rpc.error.connect_failed", error=exc))
 
     def ensure_connected(self) -> None:
         """Переподключается, если соединение отсутствует."""
@@ -117,13 +113,22 @@ class RPCClient:
         (например, Discord был закрыт и открыт заново), выполняет одну попытку
         переподключения и повторяет вызов. Любые другие ошибки пробрасывает как есть —
         их переводит в понятное сообщение сам вызывающий код.
+
+        Если соединение обрывается повторно даже после переподключения (например,
+        Discord закрылся насовсем), ошибка не пробрасывается как есть (это была бы
+        сырая, непереведённая и возможно пустая строка), а оборачивается в RPCError
+        с понятным пользователю сообщением.
         """
         try:
             return func()
         except _RECOVERABLE_ERRORS:
             self.connected = False
-            self.connect()
-            return func()
+            self.connect()  # при неудаче поднимает RPCError — пробрасываем как есть
+            try:
+                return func()
+            except _RECOVERABLE_ERRORS as retry_exc:
+                self.connected = False
+                raise RPCError(t("rpc.error.retry_failed", error=_exc_text(retry_exc))) from retry_exc
 
     def update(self, preset: dict[str, Any]) -> None:
         """
@@ -142,7 +147,7 @@ class RPCClient:
         try:
             self._call_with_reconnect(lambda: self._rpc.clear())
         except PyPresenceException as exc:
-            raise RPCError(f"Не удалось очистить статус: {exc}")
+            raise RPCError(t("rpc.error.clear_failed", error=exc))
 
     def _send_update(self, preset: dict[str, Any]) -> None:
         """Формирует payload из пресета и отправляет его в Discord."""
@@ -190,11 +195,8 @@ class RPCClient:
             # который выполнит переподключение и повторит попытку.
             raise
         except ServerError as exc:
-            raise RPCError(
-                f"Discord отклонил обновление статуса: {exc}. "
-                f"Проверьте названия ключей ассетов (картинок) и ссылки в кнопках."
-            )
+            raise RPCError(t("rpc.error.update_rejected", error=exc))
         except ResponseTimeout:
-            raise RPCError("Discord не ответил вовремя. Попробуйте повторить обновление.")
+            raise RPCError(t("rpc.error.response_timeout"))
         except PyPresenceException as exc:
-            raise RPCError(f"Ошибка pypresence: {exc}")
+            raise RPCError(t("rpc.error.pypresence_error", error=exc))

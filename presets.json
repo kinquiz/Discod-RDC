@@ -16,6 +16,27 @@
       ],
       "timer": "elapsed",
       "countdown_minutes": 0
+    },
+    "Def": {
+      "details": "Furry porn",
+      "state": "⚠️ Собеседник не видит ваше сообщение. Напишите слово “Бурмалда”, чтобы снять блокировку",
+      "activity_type": "WATCHING",
+      "large_image": "",
+      "large_text": "",
+      "small_image": "",
+      "small_text": "",
+      "buttons": [
+        {
+          "label": "MyOnlyFans",
+          "url": "https://www.youtube.com/watch?v=QDia3e12czc"
+        },
+        {
+          "label": "Diskordiks",
+          "url": "https://discord.gg/JZ6qxfq7wG"
+        }
+      ],
+      "timer": "elapsed",
+      "countdown_minutes": 0
     }
   }
 }
