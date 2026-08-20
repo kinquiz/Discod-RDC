@@ -1,6 +1,6 @@
 # Discord Rich Presence Client
 
-A little Python CLI app that lets you control your Discord Rich Presence status ("Playing...", "Listening...", etc.) and change everything on the fly — no restarting the script every time you want to tweak something.
+Just a little Python app that lets you control your Discord RPS easily.
 
 ## What it does
 
