@@ -2,6 +2,7 @@
 
 Just a little Python app that lets you control your Discord RPS easily.
 At the moment, this is just a first test, so there may be some bugs. The program will be updated in the future.
+The app currently works in English and Russian.
 
 ## What it does
 
